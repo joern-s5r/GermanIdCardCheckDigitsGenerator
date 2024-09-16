@@ -1,0 +1,209 @@
+<!-- 
+https://www.php-einfach.de/spanerses/personalausweis-ueberpruefen/
+http://www.pruefziffernberechnung.de/P/Personalausweis-DE.shtml
+-->
+
+<html>
+	<head>
+		<style>
+			.bodyStyle {
+				margin: 30px;
+			}
+			.mainCol {
+			   float: left;
+			   margin-right: 30px;
+			   
+			}
+		</style>
+		<script>
+		
+			const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+			const randomDigitsSource = initRandomDigitsSource();
+			const multipliers = [7,3,1];
+			
+			function initRandomDigitsSource(){
+			
+				const numbers = '0123456789'.split('');
+				
+				const digits = [];
+				digits.push(...numbers);
+				digits.push(...alphabet);
+				return digits;
+			}
+			
+			function calcCheckDigit(inputString){
+			
+				const inputValues = inputString.split('');
+			
+				let multipliersIndex = 0;
+				let checkSum = 0;
+				for (const input of inputValues){ 
+				
+					let number = input;
+					const isLetter = number.match(/[a-z]/i);
+					if (isLetter){
+					
+						const letter = number.toLowerCase();
+						const letterIndex = alphabet.indexOf(letter);
+						number = letterIndex + 10;
+					}
+					
+					// console.log('number of ' + input + '=' + number);
+					
+					const multiplier = multipliers[multipliersIndex];
+					// console.log('multiplier=' + multiplier);
+					
+					number = number * multiplier;
+					
+					multipliersIndex++;
+					if (multipliersIndex >= multipliers.length ){
+						multipliersIndex = 0;
+					}
+					
+					checkSum = checkSum + number;
+				}
+				
+				// console.log('checkSum of ' + inputString + '=' + checkSum);
+				
+				const lastDigit = checkSum % 10;
+				return lastDigit;
+			}
+			
+			function getRandomString(length) {
+			
+				let randomString = '';
+				for ( let i = 0; i < length; i++ ) {
+					const randomDigit = randomDigitsSource[Math.floor(Math.random()*randomDigitsSource.length)];
+					randomString += randomDigit;
+				}
+				return randomString;
+			}
+			
+			function getRandomNumber(min, max) {
+				return Math.floor(Math.random() * (max - min + 1) ) + min;
+			}
+			
+			function getRandomBirthDate(){
+			
+				const minAgeInDays = 18 * 365;
+				const maxAgeInDays = 100 * 365;
+				const randomAgeInDays = getRandomNumber(minAgeInDays, maxAgeInDays);
+								
+				let date = new Date();
+				date = date.setDate(date.getDate() - randomAgeInDays);
+				return new Date(date);
+			}
+			
+			function getRandomExpirationDate(){
+			
+				const earliestExpirationInDays = 1;
+				const longestExpirationInDays = 10 * 365;
+				const randomExpirationInDays = getRandomNumber(earliestExpirationInDays, longestExpirationInDays);
+								
+				let date = new Date();
+				date = date.setDate(date.getDate() + randomExpirationInDays);
+				return new Date(date);
+			}
+			
+			//A function for formatting a date to yyMMdd
+			function formatDate(d){
+			
+				var year = d.getFullYear();
+				//pull the last two digits of the year
+				year = year.toString().substr(-2);
+				
+				var month = d.getMonth();
+				//increment month by 1 since it is 0 indexed
+				//converts month to a string
+				month = (month + 1).toString();
+				//if month is between 1-9 pad right with a 0 for two digits
+				if (month.length === 1){
+					month = "0" + month;
+				}
+				
+				//convert day to string
+				var day = d.getDate().toString();
+				//if day is between 1-9 pad right with a 0 for two digits
+				if (day.length === 1){
+					day = "0" + day;
+				}
+
+				//return the string "yyMMdd"
+				return year + month + day;
+			}
+			
+			
+			function randomInputs(){
+				
+				document.getElementById("authorityCode").value = getRandomString(4);
+				document.getElementById("authorityRunningNumber").value = getRandomString(5);
+				
+				const birthDate = getRandomBirthDate();
+				document.getElementById("birthDate").value = formatDate(birthDate);
+				
+				const expirationDate = getRandomExpirationDate();
+				document.getElementById("expirationDate").value = formatDate(expirationDate);
+			}
+			
+			function calcCheckDigits(){
+
+				const authorityCode = document.getElementById("authorityCode").value;
+				const authorityRunningNumber = document.getElementById("authorityRunningNumber").value;
+				const birthDate = document.getElementById("birthDate").value;
+				const expirationDate = document.getElementById("expirationDate").value;
+				
+				const authorityCheckDigit = calcCheckDigit(authorityCode + "" + authorityRunningNumber);
+				document.getElementsByClassName("authority")[0].innerText = authorityCode + " " + authorityRunningNumber + " " + authorityCheckDigit;
+				
+				const birthDateCheckDigit = calcCheckDigit(birthDate);
+				document.getElementsByClassName("birthDate")[0].innerText = birthDate + " " + birthDateCheckDigit;
+				
+				const expirationDateCheckDigit = calcCheckDigit(expirationDate);
+				document.getElementsByClassName("expirationDate")[0].innerText = expirationDate + " " + expirationDateCheckDigit;
+				
+				const overallCheckDigit = calcCheckDigit(
+					authorityCode + "" +
+					authorityRunningNumber + "" +
+					authorityCheckDigit + "" +
+					birthDate + "" +
+					birthDateCheckDigit + "" +
+					expirationDate + "" +
+					expirationDateCheckDigit);
+				document.getElementsByClassName("endDigit")[0].innerText = overallCheckDigit;
+			}
+		  
+		</script>
+	</head>
+	<body class="bodyStyle">
+		
+		<h1>Prüfzifferngenerator für den Personalausweis</h1>
+		
+		<span class="mainCol">
+			<h2>Eingabe</h2>
+			
+			<p>Behördenkennzahl (4-stellig)</p>
+			<input id="authorityCode" placeholder="Bsp.: T220"/>
+			
+			<p>laufende Nummer (5-stellig)</p>
+			<input id="authorityRunningNumber" placeholder="Bsp.: 00129"/>
+			
+			<p>Geburtsdatum</p>
+			<input id="birthDate" placeholder="yyMMdd"/>
+			
+			<p>Ablaufdatum des Ausweis</p>
+			<input id="expirationDate" placeholder="yyMMdd"/>
+			
+			<p><button onclick="randomInputs()">Alles zufällig ausfüllen</button></p>
+		</span>
+		<span class="mainCol">
+			<h2>Prüfziffern</h2>
+			<p>Behörde: <span class="authority"/></p>
+			<p>Geburtsdatum: <span class="birthDate"/></p>
+			<p>Ablaufdatum: <span class="expirationDate"/></p>
+			<p>Endziffer: <span class="endDigit"/></p>
+			<p>
+				<button onclick="calcCheckDigits()">Prüfziffern generieren</button>
+			</p>			
+		</span>
+	</body>
+</html>
